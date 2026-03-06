@@ -11,30 +11,38 @@ void doWork(const int a, const int b,int &c)
 }
 
 int main(){
-    //auto result = new int(0);
-    // std::thread t1(doWork,2,2,*result);
+    int q = -1;
 
-    int result;
+    std::thread t1([&q](){
+        while(true)
+        {
+            std::this_thread::sleep_for(2 * std::chrono::seconds(1));
+            std::cin >> q;
 
-    std::thread t1(doWork,9,1,std::ref(result));
+            if (q == 0)
+                break;
+        }
+    });
 
-    //t1.detach();//finish second thread if main thread is finished
 
-    //t1.join();//just wait when this thread finished and after go ahead
+    std::thread t2([&q](){
+        int count = 0;
+        while(true)
+        {
+            std::string str = "-----------------------------------";
+            if (count == 30)
+                count = 0;
+            str.insert(count,"0");
+            std::cout<< str << std::endl;
+            std::this_thread::sleep_for(250 * std::chrono::milliseconds(1));
+            count++;
 
-    // while(true)
-    // {
-    //     std::this_thread::sleep_for(3 * std::chrono::seconds(1));
-    // }
-    // std::cout<<std::this_thread::get_id() << " main started"<<std::endl;
-    // std::this_thread::sleep_for(3 * std::chrono::seconds(1));
-    // std::cout<<std::this_thread::get_id() << " main finished"<<std::endl;
+            if (q == 0)
+                break;
+        }
+    });
 
     t1.join();
-    std::cout << result << std::endl;
-
-    // delete result;
-
+    t2.join();
     return 0;
-
 }
