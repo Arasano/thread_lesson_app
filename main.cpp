@@ -1,86 +1,49 @@
 #include <chrono>
 #include <functional>
 #include <iostream>
+#include <list>
+#include <mutex>
 #include <thread>
 
-void log(const std::thread::id id, bool is_main, bool is_finish) {
-    if (!is_finish) {
-        if (is_main) {
-            std::cout << "main thread : " << id << " is working\n" << std::endl;
-        } else {
-            std::cout << "thread : " << id << " is working\n" << std::endl;
-        }
-    } else {
-        if (is_main) {
-            std::cout << "main thread : " << id << " is finished\n"
-                      << std::endl;
-        } else {
-            std::cout << "thread : " << id << " is finished\n" << std::endl;
-        }
+void log(const std::list<int> &list) {
+    std::cout << "\nlist: [ ";
+    for (int i : list) {
+        std::cout << i << ", ";
     }
+    std::cout << " ]\n" << std::endl;
 }
 
-class class_test_1 {
-   public:
-    class_test_1() = default;
-
-    int doWork1(const int a) {
-        int res;
-        log(std::this_thread::get_id(), false, false);
-        std::this_thread::sleep_for(7 * std::chrono::seconds(1));
-        res = a * 2;
-        log(std::this_thread::get_id(), false, true);
-        return res;
+void doWork1(std::list<int> &list, std::mutex &mt_list) {
+    mt_list.lock();
+    int count = 0;
+    while (count < 100) {
+        count += 2;
+        list.push_back(count);
+        log(list);
     }
+    std::this_thread::sleep_for(4 * std::chrono::seconds(1));
+    mt_list.unlock();
+}
 
-    void doWork2() {
-        log(std::this_thread::get_id(), false, false);
-        std::this_thread::sleep_for(7 * std::chrono::seconds(1));
-        log(std::this_thread::get_id(), false, true);
+void doWork2(std::list<int> &list, std::mutex &mt_list) {
+    mt_list.lock();
+    int count = 0;
+    while (count > -100) {
+        count -= 2;
+        list.push_back(count);
+        log(list);
     }
-
-    void doWork3(const int a, int &c) {
-        log(std::this_thread::get_id(), false, false);
-        std::this_thread::sleep_for(7 * std::chrono::seconds(1));
-        c = a * 3;
-        log(std::this_thread::get_id(), false, true);
-    }
-
-    ~class_test_1() = default;
-};
+    std::this_thread::sleep_for(4 * std::chrono::seconds(1));
+    mt_list.unlock();
+}
 
 int main() {
-    log(std::this_thread::get_id(), true, false);
+    std::mutex mt;
+    std::list<int> list_1 = {};
 
-    class_test_1 class_value;
-
-    int input_value_1 = 9;
-    int result_1 = -1;
-    std::thread t1([&class_value, input_value_1, &result_1]() {
-        result_1 = class_value.doWork1(input_value_1);
-    });
-
+    std::thread t1(doWork1, std::ref(list_1), std::ref(mt));
+    std::thread t2(doWork2, std::ref(list_1), std::ref(mt));
     t1.join();
-    std::cout << "res 1 = " << result_1 << "\n" << std::endl;
-
-    //    std::thread t2([&class_value]() {
-    //        class_value.doWork2(input_value_2, result_2);
-    //    });
-    std::thread t2(&class_test_1::doWork2, std::ref(class_value));
-
     t2.join();
-
-    int input_value_3 = 5;
-    int result_3 = -1;
-    //    std::thread t3([&class_value, input_value_3, &result_3]() {
-    //        class_value.doWork3(input_value_3, result_3);
-    //    });
-    std::thread t3(&class_test_1::doWork3, std::ref(class_value), input_value_3,
-                   std::ref(result_3));
-
-    t3.join();
-    std::cout << "res 3 = " << result_3 << "\n" << std::endl;
-
-    log(std::this_thread::get_id(), true, true);
     return 0;
 }
