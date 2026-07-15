@@ -14,7 +14,8 @@ void log(const std::list<int> &list) {
 }
 
 void doWork1(std::list<int> &list, std::mutex &mt_list) {
-    mt_list.lock();
+    std::lock_guard<std::mutex> lock_guard(mt_list);
+
     int count = 0;
     while (count < 100) {
         count += 2;
@@ -22,11 +23,11 @@ void doWork1(std::list<int> &list, std::mutex &mt_list) {
         log(list);
     }
     std::this_thread::sleep_for(4 * std::chrono::seconds(1));
-    mt_list.unlock();
 }
 
 void doWork2(std::list<int> &list, std::mutex &mt_list) {
-    mt_list.lock();
+    std::lock_guard<std::mutex> lock_guard(mt_list);
+
     int count = 0;
     while (count > -100) {
         count -= 2;
@@ -34,7 +35,6 @@ void doWork2(std::list<int> &list, std::mutex &mt_list) {
         log(list);
     }
     std::this_thread::sleep_for(4 * std::chrono::seconds(1));
-    mt_list.unlock();
 }
 
 int main() {
